@@ -15,9 +15,9 @@ public interface IServiceRegistration {
      */
     public void createService(ServiceConfig service) throws IOException, InterruptedException;
 
-    public void createRoute(Route route,String serviceId) throws IOException, InterruptedException;
+    public void createRoute(Route route, String serviceId) throws IOException, InterruptedException;
 
     public void createGlobalPlugin(PluginConfig config) throws IOException, InterruptedException;
 
-    public void createPlugin(PluginConfig config,String serviceId) throws IOException, InterruptedException;
+    public void createPlugin(PluginConfig config, String serviceId) throws IOException, InterruptedException;
 }

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 
 @Service("onBoardServiceImpl")
-public class OnBoardServiceImpl implements IOnBoardService{
+public class OnBoardServiceImpl implements IOnBoardService {
 
     @Autowired
     private IServiceRegistration iserviceRegistration;
@@ -21,21 +21,22 @@ public class OnBoardServiceImpl implements IOnBoardService{
 
     @Override
     public void onboardServices(RegistrationRequest registrationRequest) throws OnBoardingServiceException {
-       try {
-           logger.info("Execution started In onboardServices() ");
-           for(ServiceConfig service : registrationRequest.getServices()){
-               iserviceRegistration.createService(service);
-           }
-           if(null != registrationRequest.getGlobalPlugins() && !registrationRequest.getGlobalPlugins().isEmpty()){
-           for(PluginConfig config : registrationRequest.getGlobalPlugins()){
-               iserviceRegistration.createGlobalPlugin(config);
-           }}
-           logger.info("Execution completed In onboardServices() ");
-       }catch(InterruptedException exception){
-           logger.error("Exception thrown while executing onboardServices() : {} ",exception);
-       }catch(Exception exception){
-           logger.error("Exception thrown while executing onboardServices() : {} ",exception);
-       }
+        try {
+            logger.info("Execution started In onboardServices() ");
+            for (ServiceConfig service : registrationRequest.getServices()) {
+                iserviceRegistration.createService(service);
+            }
+            if (null != registrationRequest.getGlobalPlugins() && !registrationRequest.getGlobalPlugins().isEmpty()) {
+                for (PluginConfig config : registrationRequest.getGlobalPlugins()) {
+                    iserviceRegistration.createGlobalPlugin(config);
+                }
+            }
+            logger.info("Execution completed In onboardServices() ");
+        } catch (InterruptedException exception) {
+            logger.error("Exception thrown while executing onboardServices() : {} ", exception);
+        } catch (Exception exception) {
+            logger.error("Exception thrown while executing onboardServices() : {} ", exception);
+        }
     }
 
 }

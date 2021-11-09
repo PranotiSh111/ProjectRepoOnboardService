@@ -1,5 +1,7 @@
 package com.onboarding.services.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,6 +11,7 @@ import java.util.List;
 
 @Setter
 @Getter
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Route {
 
     @JsonProperty("name")
@@ -19,7 +22,4 @@ public class Route {
 
     @JsonProperty("paths")
     private List<String> paths;
-
-    @JsonProperty("plugins")
-    private List<PluginConfig> routePlugins;
 }

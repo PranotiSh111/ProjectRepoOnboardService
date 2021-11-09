@@ -25,7 +25,7 @@ public class OnBoardServiceController {
     @PostMapping("/register")
     public void registerServices(@RequestBody final RegistrationRequest registrationRequest) throws JsonProcessingException, OnBoardingServiceException {
         ObjectMapper mapper = new ObjectMapper();
-        logger.info("Received request : {} ",mapper.writeValueAsString(registrationRequest));
+        logger.info("Received request : {} ", mapper.writeValueAsString(registrationRequest));
         onBoardService.onboardServices(registrationRequest);
         logger.info("Request Completed Sucessfully");
     }
