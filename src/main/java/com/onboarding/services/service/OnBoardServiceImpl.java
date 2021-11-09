@@ -26,9 +26,10 @@ public class OnBoardServiceImpl implements IOnBoardService{
            for(ServiceConfig service : registrationRequest.getServices()){
                iserviceRegistration.createService(service);
            }
+           if(null != registrationRequest.getGlobalPlugins() && !registrationRequest.getGlobalPlugins().isEmpty()){
            for(PluginConfig config : registrationRequest.getGlobalPlugins()){
                iserviceRegistration.createGlobalPlugin(config);
-           }
+           }}
            logger.info("Execution completed In onboardServices() ");
        }catch(InterruptedException exception){
            logger.error("Exception thrown while executing onboardServices() : {} ",exception);

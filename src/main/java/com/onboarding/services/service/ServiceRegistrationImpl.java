@@ -51,16 +51,20 @@ public class ServiceRegistrationImpl implements IServiceRegistration {
 
         if((response.statusCode() == 201 || response.statusCode() == 200 )
                 && !service.getRoutes().isEmpty()) {
-            KongResponse responseBody = mapper.convertValue(response.body(),KongResponse.class);
+            KongResponse responseBody = mapper.readValue(response.body(),KongResponse.class);
+            logger.info("Service Id : {} ", responseBody.getId());
             service.setServiceId(responseBody.getId().toString());
-
+            logger.info("Service Id : {} ", service.getServiceId());
             for (Route route : service.getRoutes()) {
                 createRoute(route,service.getServiceId());
             }
 
-            for (PluginConfig plugin : service.getServicePlugins()) {
-                createPlugin(plugin,service.getServiceId());
-            }
+            PluginConfig config = new PluginConfig();
+            config.setName("rate-limiting");
+            config.setEnabled(true);
+            config.setRateLimitterConfig(getRateLimitterConfiguration());
+            createPlugin(config,service.getServiceId());
+
         }
     }
 
@@ -85,7 +89,7 @@ public class ServiceRegistrationImpl implements IServiceRegistration {
 
         // create a request
         HttpRequest request = HttpRequest.newBuilder(
-                        URI.create("http://localhost:8001/serviceId/routes"))
+                        URI.create("http://localhost:8001/services/" + serviceId + "/routes"))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(String.valueOf(jsonBody)))
                 .build();
@@ -105,7 +109,7 @@ public class ServiceRegistrationImpl implements IServiceRegistration {
 
         JsonNode jsonBody =  mapper.createObjectNode()
                 .put("name",config.getName())
-                .put("enabled",config.getEnabled())
+                .put("enabled",config.getEnabled());
 
         HttpClient client = HttpClient.newHttpClient();
 
@@ -127,31 +131,34 @@ public class ServiceRegistrationImpl implements IServiceRegistration {
     public void createPlugin(PluginConfig config, String serviceId) throws IOException, InterruptedException {
 
 
-        logger.info("Execution started In createGlobalPlugin() ");
+        logger.info("Execution started In createPlugin() ");
 
         ObjectMapper mapper = new ObjectMapper();
 
         JsonNode jsonBody =  mapper.createObjectNode()
                 .put("name",config.getName())
-                .put("enabled",config.getEnabled());
+                .put("enabled",config.getEnabled())
+                .set("config",config.getRateLimitterConfig());
 
         HttpClient client = HttpClient.newHttpClient();
 
+        logger.info("Request created for create Plugin : {} ",String.valueOf(jsonBody));
+
         // create a request
         HttpRequest request = HttpRequest.newBuilder(
-                        URI.create("http://localhost:8001/serviceId/plugins"))
+                        URI.create("http://localhost:8001/services/" + serviceId + "/plugins"))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(String.valueOf(jsonBody)))
                 .build();
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        logger.info("Response of createGlobalPluginRestCall : {} ", response.statusCode());
+        logger.info("Response of createPluginRestCall : {} ", response.statusCode());
 
 
     }
 
-    private JsonNode getRateLimitterCOnfiguration(PluginConfig pluginConfig){
+    private JsonNode getRateLimitterConfiguration(){
 
         JsonNode config = new ObjectMapper().createObjectNode()
                 .put("second",60)
