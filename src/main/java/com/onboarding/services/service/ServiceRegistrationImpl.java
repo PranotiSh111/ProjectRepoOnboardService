@@ -2,15 +2,9 @@ package com.onboarding.services.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.onboarding.services.model.KongResponse;
-import com.onboarding.services.model.PluginConfig;
-import com.onboarding.services.model.Route;
-import com.onboarding.services.model.ServiceConfig;
+import com.onboarding.services.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -18,9 +12,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
 
 
 @Service("serviceRegistrationImpl")
@@ -62,6 +53,25 @@ public class ServiceRegistrationImpl implements IServiceRegistration {
 
             createDefaultPlugins(service);
 
+            createOptionalPlugins(service);
+        }
+
+    }
+
+    private void createOptionalPlugins(ServiceConfig service)  throws IOException, InterruptedException {
+        for(PluginConfig config : service.getServicePlugins()){
+            if(config.getName().equals("correlation-id")){
+                config.setEnabled(true);
+                config.setRateLimitterConfig(getCorrelationIdConfiguration(config.getConfig()));
+                createPlugin(config, service.getServiceId());
+            }
+
+            if(config.getName().equals("key-auth")){
+                config.setEnabled(true);
+                config.setRateLimitterConfig(getAuthenticationKeyConfiguration(config.getConfig()));
+                createPlugin(config, service.getServiceId());
+            }
+
         }
     }
 
@@ -90,11 +100,30 @@ public class ServiceRegistrationImpl implements IServiceRegistration {
 
     }
 
-    private JsonNode getCORSPluginConfiguration() {
-
+    private JsonNode getCORSPluginConfiguration(){
         JsonNode config = new ObjectMapper().createObjectNode()
                 .put("max_age", 3800)
                 .put("preflight_continue", false);
+
+        return config;
+    }
+
+    private JsonNode getCorrelationIdConfiguration(CommonConfig commonConfig) {
+
+        JsonNode config = new ObjectMapper().createObjectNode()
+                .put("header_name", "Kong-Request-CorrelationID")
+                .put("generator",  commonConfig.getUuid() + "#counter")
+                .put("echo_downstream",commonConfig.getDownstreamYes());
+
+        return config;
+
+    }
+
+    private JsonNode getAuthenticationKeyConfiguration(CommonConfig commonConfig) {
+
+        JsonNode config = new ObjectMapper().createObjectNode()
+                .put("user", commonConfig.getUser())
+                .put("password",  commonConfig.getPassword());
 
         return config;
 

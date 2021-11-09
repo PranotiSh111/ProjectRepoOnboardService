@@ -27,6 +27,6 @@ public class OnBoardServiceController {
         ObjectMapper mapper = new ObjectMapper();
         logger.info("Received request : {} ", mapper.writeValueAsString(registrationRequest));
         onBoardService.onboardServices(registrationRequest);
-        logger.info("Request Completed Sucessfully");
+        logger.info("Request Completed Successfully");
     }
 }

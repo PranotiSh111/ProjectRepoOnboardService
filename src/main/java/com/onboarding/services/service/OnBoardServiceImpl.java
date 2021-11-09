@@ -23,8 +23,10 @@ public class OnBoardServiceImpl implements IOnBoardService {
     public void onboardServices(RegistrationRequest registrationRequest) throws OnBoardingServiceException {
         try {
             logger.info("Execution started In onboardServices() ");
-            for (ServiceConfig service : registrationRequest.getServices()) {
-                iserviceRegistration.createService(service);
+            if (null != registrationRequest.getServices() && !registrationRequest.getServices().isEmpty()) {
+                for (ServiceConfig service : registrationRequest.getServices()) {
+                    iserviceRegistration.createService(service);
+                }
             }
             if (null != registrationRequest.getGlobalPlugins() && !registrationRequest.getGlobalPlugins().isEmpty()) {
                 for (PluginConfig config : registrationRequest.getGlobalPlugins()) {
