@@ -52,20 +52,58 @@ public class ServiceRegistrationImpl implements IServiceRegistration {
         if((response.statusCode() == 201 || response.statusCode() == 200 )
                 && !service.getRoutes().isEmpty()) {
             KongResponse responseBody = mapper.readValue(response.body(),KongResponse.class);
-            logger.info("Service Id : {} ", responseBody.getId());
             service.setServiceId(responseBody.getId().toString());
-            logger.info("Service Id : {} ", service.getServiceId());
             for (Route route : service.getRoutes()) {
                 createRoute(route,service.getServiceId());
             }
 
-            PluginConfig config = new PluginConfig();
-            config.setName("rate-limiting");
-            config.setEnabled(true);
-            config.setRateLimitterConfig(getRateLimitterConfiguration());
-            createPlugin(config,service.getServiceId());
+            createDefaultPlugins(service);
 
         }
+    }
+
+    private void createDefaultPlugins(ServiceConfig service) throws IOException, InterruptedException {
+        //Rate-Limiting Plugin configuration
+        PluginConfig config = new PluginConfig();
+        config.setName("rate-limiting");
+        config.setEnabled(true);
+        config.setRateLimitterConfig(getRateLimitterConfiguration());
+        createPlugin(config,service.getServiceId());
+
+        //File Logging
+        PluginConfig filePathConfig = new PluginConfig();
+        filePathConfig.setName("file-log");
+        filePathConfig.setEnabled(true);
+        filePathConfig.setRateLimitterConfig(getFileLoggingConfiguration(service));
+        createPlugin(filePathConfig,service.getServiceId());
+
+        //CORS
+        PluginConfig corsPluginConfig = new PluginConfig();
+        corsPluginConfig.setName("cors");
+        corsPluginConfig.setEnabled(true);
+        corsPluginConfig.setRateLimitterConfig(getCORSPluginConfiguration());
+        createPlugin(corsPluginConfig,service.getServiceId());
+
+    }
+
+    private JsonNode getCORSPluginConfiguration() {
+
+        JsonNode config = new ObjectMapper().createObjectNode()
+                .put("max_age",3800)
+                .put("preflight_continue",false);
+
+        return config;
+
+    }
+
+    private JsonNode getFileLoggingConfiguration(ServiceConfig serviceConfig) {
+
+        JsonNode config = new ObjectMapper().createObjectNode()
+                .put("path","/tmp/"+serviceConfig.getName()+".log")
+                .put("reopen",false);
+
+        return config;
+
     }
 
     @Override
