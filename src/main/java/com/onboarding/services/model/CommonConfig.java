@@ -15,9 +15,17 @@ public class CommonConfig {
     @JsonProperty("password")
     private String password;
 
-    @JsonProperty("uuid")
-    private String uuid;
+    @JsonProperty("generator")
+    private String generator;
 
-    @JsonProperty("downstream_yes")
-    private Boolean downstreamYes;
+    @JsonProperty("echo_downstream")
+    private Boolean echoDownstream=false;
+
+    @JsonProperty("key")
+    private String key;
+
+    @JsonProperty("run_on_preflight")
+    private Boolean runOnPreflight=true;
+
+    private String consumerId;
 }

@@ -1,5 +1,6 @@
 package com.onboarding.services.service;
 
+import com.onboarding.services.model.CommonConfig;
 import com.onboarding.services.model.PluginConfig;
 import com.onboarding.services.model.Route;
 import com.onboarding.services.model.ServiceConfig;
@@ -20,4 +21,9 @@ public interface IServiceRegistration {
     public void createGlobalPlugin(PluginConfig config) throws IOException, InterruptedException;
 
     public void createPlugin(PluginConfig config, String serviceId) throws IOException, InterruptedException;
+
+    public void createConsumer(CommonConfig commonConfig, String serviceId) throws IOException, InterruptedException;
+
+    public void createConsumerCredential(CommonConfig commonConfig, String serviceId) throws IOException, InterruptedException;
+
 }

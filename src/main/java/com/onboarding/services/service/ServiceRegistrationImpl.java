@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.onboarding.services.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -12,12 +13,16 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Optional;
 
 
 @Service("serviceRegistrationImpl")
 public class ServiceRegistrationImpl implements IServiceRegistration {
 
     Logger logger = LoggerFactory.getLogger(ServiceRegistrationImpl.class);
+
+    @Value("${KongAdminAPIURL}")
+    private String kongAdminAPIUrl;
 
     @Override
     public void createService(ServiceConfig service) throws IOException, InterruptedException {
@@ -34,7 +39,7 @@ public class ServiceRegistrationImpl implements IServiceRegistration {
 
         // create a request
         HttpRequest request = HttpRequest.newBuilder(
-                        URI.create("http://localhost:8001/services"))
+                        URI.create(kongAdminAPIUrl + "/services"))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(String.valueOf(node)))
                 .build();
@@ -62,14 +67,22 @@ public class ServiceRegistrationImpl implements IServiceRegistration {
         for(PluginConfig config : service.getServicePlugins()){
             if(config.getName().equals("correlation-id")){
                 config.setEnabled(true);
-                config.setRateLimitterConfig(getCorrelationIdConfiguration(config.getConfig()));
-                createPlugin(config, service.getServiceId());
+                if(null != config.getConfig()) {
+                    config.setRateLimitterConfig(getCorrelationIdConfiguration(config.getConfig()));
+                    createPlugin(config, service.getServiceId());
+                }
             }
 
             if(config.getName().equals("key-auth")){
                 config.setEnabled(true);
-                config.setRateLimitterConfig(getAuthenticationKeyConfiguration(config.getConfig()));
-                createPlugin(config, service.getServiceId());
+                if(null != config.getConfig()) {
+                    createConsumer(config.getConfig(),service.getServiceId());
+                    config.setRateLimitterConfig(getAuthenticationKeyConfiguration(config.getConfig()));
+                    createPlugin(config, service.getServiceId());
+                    if(null != config.getConfig().getConsumerId()) {
+                        createConsumerCredential(config.getConfig(), service.getServiceId());
+                    }
+                }
             }
 
         }
@@ -112,8 +125,8 @@ public class ServiceRegistrationImpl implements IServiceRegistration {
 
         JsonNode config = new ObjectMapper().createObjectNode()
                 .put("header_name", "Kong-Request-CorrelationID")
-                .put("generator",  commonConfig.getUuid() + "#counter")
-                .put("echo_downstream",commonConfig.getDownstreamYes());
+                .put("generator",  commonConfig.getGenerator())
+                .put("echo_downstream",commonConfig.getEchoDownstream());
 
         return config;
 
@@ -122,8 +135,8 @@ public class ServiceRegistrationImpl implements IServiceRegistration {
     private JsonNode getAuthenticationKeyConfiguration(CommonConfig commonConfig) {
 
         JsonNode config = new ObjectMapper().createObjectNode()
-                .put("user", commonConfig.getUser())
-                .put("password",  commonConfig.getPassword());
+                .put("run_on_preflight",commonConfig.getRunOnPreflight())
+                .put("key_in_header",Boolean.TRUE);
 
         return config;
 
@@ -151,7 +164,7 @@ public class ServiceRegistrationImpl implements IServiceRegistration {
         logger.info("Request Created for creating route : {} ",mapper.writeValueAsString(route));
         // create a request
         HttpRequest request = HttpRequest.newBuilder(
-                        URI.create("http://localhost:8001/services/" + serviceId + "/routes"))
+                        URI.create(kongAdminAPIUrl + "/services/" + serviceId + "/routes"))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(route)))
                 .build();
@@ -177,7 +190,7 @@ public class ServiceRegistrationImpl implements IServiceRegistration {
 
         // create a request
         HttpRequest request = HttpRequest.newBuilder(
-                        URI.create("http://localhost:8001/plugins"))
+                        URI.create(kongAdminAPIUrl + "/plugins"))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(String.valueOf(jsonBody)))
                 .build();
@@ -208,7 +221,7 @@ public class ServiceRegistrationImpl implements IServiceRegistration {
 
         // create a request
         HttpRequest request = HttpRequest.newBuilder(
-                        URI.create("http://localhost:8001/services/" + serviceId + "/plugins"))
+                        URI.create(kongAdminAPIUrl + "/services/" + serviceId + "/plugins"))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(String.valueOf(jsonBody)))
                 .build();
@@ -216,6 +229,34 @@ public class ServiceRegistrationImpl implements IServiceRegistration {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
         logger.info("Response of createPluginRestCall : {} ", response.statusCode());
+
+
+    }
+
+    @Override
+    public void createConsumerCredential(CommonConfig config, String serviceId) throws IOException, InterruptedException {
+
+
+        logger.info("Execution started In createConsumerCredential() ");
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        HttpClient client = HttpClient.newHttpClient();
+        JsonNode jsonBody = mapper.createObjectNode()
+                .put("key", config.getKey());
+
+        logger.info("Request created for create consumer credentials : {} ", String.valueOf(jsonBody));
+
+        // create a request
+        HttpRequest request = HttpRequest.newBuilder(
+                        URI.create(kongAdminAPIUrl + "/consumers/" + config.getConsumerId() + "/key-auth"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(String.valueOf(jsonBody)))
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        logger.info("Response of createConsumerCredential : {} ", response.statusCode());
 
 
     }
@@ -229,5 +270,36 @@ public class ServiceRegistrationImpl implements IServiceRegistration {
 
         return config;
     }
+
+    @Override
+    public void createConsumer(CommonConfig config,String serviceId) throws IOException, InterruptedException {
+
+        logger.info("Execution started In createRoute() ");
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        JsonNode jsonBody = mapper.createObjectNode()
+                .put("username", config.getUser())
+                .put("custom_id", config.getUser());
+
+        HttpClient client = HttpClient.newHttpClient();
+
+        logger.info("Request Created for creating consumer : {} ",mapper.writeValueAsString(jsonBody));
+        // create a request
+        HttpRequest request = HttpRequest.newBuilder(
+                        URI.create(kongAdminAPIUrl + "/consumers"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(jsonBody)))
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        logger.info("Response of createConsumerRestCall : {} ", response.statusCode());
+        KongResponse responseBody = mapper.readValue(response.body(), KongResponse.class);
+        config.setConsumerId(responseBody.getId().toString());
+
+
+    }
+
 
 }
