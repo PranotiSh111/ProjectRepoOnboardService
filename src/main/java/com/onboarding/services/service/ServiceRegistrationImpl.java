@@ -64,27 +64,35 @@ public class ServiceRegistrationImpl implements IServiceRegistration {
     }
 
     private void createOptionalPlugins(ServiceConfig service)  throws IOException, InterruptedException {
-        for(PluginConfig config : service.getServicePlugins()){
-            if(config.getName().equals("correlation-id")){
-                config.setEnabled(true);
-                if(null != config.getConfig()) {
-                    config.setRateLimitterConfig(getCorrelationIdConfiguration(config.getConfig()));
-                    createPlugin(config, service.getServiceId());
+        if(null != service.getServicePlugins() && !service.getServicePlugins().isEmpty()) {
+            for (PluginConfig config : service.getServicePlugins()) {
+                createCorrelationIdPlugin(service, config);
+                createKeyAuthCredentialsAndPlugin(service, config);
+            }
+        }
+    }
+
+    private void createKeyAuthCredentialsAndPlugin(ServiceConfig service, PluginConfig config) throws IOException, InterruptedException {
+        if (config.getName().equals("key-auth")) {
+            config.setEnabled(true);
+            if (null != config.getConfig()) {
+                createConsumer(config.getConfig(), service.getServiceId());
+                config.setRateLimitterConfig(getAuthenticationKeyConfiguration(config.getConfig()));
+                createPlugin(config, service.getServiceId());
+                if (null != config.getConfig().getConsumerId()) {
+                    createConsumerCredential(config.getConfig(), service.getServiceId());
                 }
             }
+        }
+    }
 
-            if(config.getName().equals("key-auth")){
-                config.setEnabled(true);
-                if(null != config.getConfig()) {
-                    createConsumer(config.getConfig(),service.getServiceId());
-                    config.setRateLimitterConfig(getAuthenticationKeyConfiguration(config.getConfig()));
-                    createPlugin(config, service.getServiceId());
-                    if(null != config.getConfig().getConsumerId()) {
-                        createConsumerCredential(config.getConfig(), service.getServiceId());
-                    }
-                }
+    private void createCorrelationIdPlugin(ServiceConfig service, PluginConfig config) throws IOException, InterruptedException {
+        if (config.getName().equals("correlation-id")) {
+            config.setEnabled(true);
+            if (null != config.getConfig()) {
+                config.setRateLimitterConfig(getCorrelationIdConfiguration(config.getConfig()));
+                createPlugin(config, service.getServiceId());
             }
-
         }
     }
 
