@@ -5,6 +5,7 @@ import com.onboarding.services.exception.OnBoardingServiceException;
 import com.onboarding.services.model.PluginConfig;
 import com.onboarding.services.model.RegistrationRequest;
 import com.onboarding.services.model.ServiceConfig;
+import com.onboarding.services.utility.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,12 +24,12 @@ public class OnBoardServiceImpl implements IOnBoardService {
     public void onboardServices(RegistrationRequest registrationRequest) throws OnBoardingServiceException {
         try {
             logger.info("Execution started In onboardServices() ");
-            if (null != registrationRequest.getServices() && !registrationRequest.getServices().isEmpty()) {
+            if (Utility.isNullOrEmptyList(registrationRequest.getServices())) {
                 for (ServiceConfig service : registrationRequest.getServices()) {
                     iserviceRegistration.createService(service);
                 }
             }
-            if (null != registrationRequest.getGlobalPlugins() && !registrationRequest.getGlobalPlugins().isEmpty()) {
+            if (Utility.isNullOrEmptyList(registrationRequest.getGlobalPlugins())) {
                 for (PluginConfig config : registrationRequest.getGlobalPlugins()) {
                     iserviceRegistration.createGlobalPlugin(config);
                 }

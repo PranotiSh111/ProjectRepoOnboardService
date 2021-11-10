@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 public class CommonConfig {
 
-    @JsonProperty("user")
+    @JsonProperty("username")
     private String user;
 
     @JsonProperty("password")
