@@ -11,5 +11,3 @@ services:
       - KONG_ADMIN_API_URL=http://localhost:8001
       - KONG_USERNAME=user
       - KONG_PASSWORD=password
-    volumes:
-      - ./:/onboardservices
