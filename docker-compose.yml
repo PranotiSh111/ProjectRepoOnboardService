@@ -1,0 +1,10 @@
+version: "3.7"
+
+services:
+  app:
+    image: onboardservices
+    ports:
+      - 8085:8085
+    working_dir: /onboardservices
+    volumes:
+      - ./:/onboardservices
