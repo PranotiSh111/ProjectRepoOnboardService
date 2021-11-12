@@ -1,0 +1,13 @@
+version: "3.7"
+
+services:
+  onboardservices:
+    build: .
+    image: onboardservices
+    ports:
+      - 8085:8085
+    working_dir: /onboardservices
+    environment:
+      - KONG_ADMIN_API_URL=http://localhost:8001
+      - KONG_USERNAME=user
+      - KONG_PASSWORD=password
